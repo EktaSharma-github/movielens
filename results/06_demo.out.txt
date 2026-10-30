@@ -25,8 +25,8 @@ ROLLBACK
 === 3. BR-3: no half stars before February 2003 (trigger + rating_scale) ===
  scale_code |       valid_from       |        valid_to        | step | min_stars 
 ------------+------------------------+------------------------+------+-----------
- WHOLE      | 1994-12-31 18:30:00+00 | 2003-02-18 21:34:27+00 |  1.0 |       1.0
- HALF       | 2003-02-18 21:34:27+00 | 2099-12-31 18:30:00+00 |  0.5 |       0.5
+ WHOLE      | 1995-01-01 00:00:00+00 | 2003-02-18 21:34:27+00 |  1.0 |       1.0
+ HALF       | 2003-02-18 21:34:27+00 | 2100-01-01 00:00:00+00 |  0.5 |       0.5
 
     User 1 rates a film 3.5 stars in 1999:
 BEGIN
@@ -40,7 +40,7 @@ ROLLBACK
     And the scales themselves cannot overlap (GiST exclusion): stretch WHOLE to 2005
 BEGIN
 psql:06_demo.sql:51: ERROR:  conflicting key value violates exclusion constraint "rating_scale_tstzrange_excl"
-DETAIL:  Key (tstzrange(valid_from, valid_to))=(["1994-12-31 18:30:00+00","2005-01-01 00:00:00+00")) conflicts with existing key (tstzrange(valid_from, valid_to))=(["2003-02-18 21:34:27+00","2099-12-31 18:30:00+00")).
+DETAIL:  Key (tstzrange(valid_from, valid_to))=(["1995-01-01 00:00:00+00","2005-01-01 00:00:00+00")) conflicts with existing key (tstzrange(valid_from, valid_to))=(["2003-02-18 21:34:27+00","2100-01-01 00:00:00+00")).
 ROLLBACK
 
 === 4. BR-4: every user has >= 20 ratings (an ASSERTION, emulated by triggers) ===
@@ -106,8 +106,8 @@ BEGIN
                Index Cond: (movie_id = 3000)
                Index Searches: 1
                Buffers: shared read=18
- Planning Time: 0.168 ms
- Execution Time: 1311.171 ms
+ Planning Time: 0.139 ms
+ Execution Time: 1113.369 ms
 
 DROP INDEX
     ix_rating_movie dropped (inside the transaction). Same query:
@@ -121,8 +121,8 @@ DROP INDEX
          Buffers: shared hit=71233 read=96188
  Planning:
    Buffers: shared hit=2 read=1
- Planning Time: 19.235 ms
- Execution Time: 7931.442 ms
+ Planning Time: 21.159 ms
+ Execution Time: 8719.147 ms
 
 ROLLBACK
     Rolled back: the index is restored.
