@@ -1,0 +1,487 @@
+Timing is on.
+SET
+Time: 0.598 ms
+SET
+Time: 2.461 ms
+BEGIN
+Time: 0.342 ms
+    relation     |   n_r    |  b_r   | f_r_tuples_per_block |    size    
+-----------------+----------+--------+----------------------+------------
+ rating          | 32000204 | 203826 |                  157 | 1592 MB
+ tag_application |  2000051 |  12784 |                  156 | 100 MB
+ ml_user         |   200948 |    912 |                  220 | 7296 kB
+ movie_genre     |   147090 |    656 |                  224 | 5248 kB
+ movie           |    87585 |    776 |                  113 | 6208 kB
+ genre           |       19 |      1 |                   19 | 8192 bytes
+(6 rows)
+
+Time: 98.956 ms
+ attribute | n_distinct  | v_a_r_estimate | correlation 
+-----------+-------------+----------------+-------------
+ movie_id  |        7558 |           7558 |      -0.002
+ rated_at  | -0.13418855 |        4294061 |      -0.004
+ stars     |          10 |             10 |       0.165
+ user_id   |       31989 |          31989 |       1.000
+(4 rows)
+
+Time: 60.744 ms
+ v_movie_id | v_user_id | v_stars 
+------------+-----------+---------
+      84432 |    200948 |      10
+(1 row)
+
+Time: 6852.792 ms (00:06.853)
+ stars | mcv_freq 
+-------+----------
+   0.5 |   0.0168
+   1.0 |   0.0315
+   1.5 |   0.0168
+   2.0 |   0.0660
+   2.5 |   0.0526
+   3.0 |   0.1890
+   3.5 |   0.1337
+   4.0 |   0.2611
+   4.5 |   0.0915
+   5.0 |   0.1409
+(10 rows)
+
+Time: 10.337 ms
+ hand_estimate 
+---------------
+       4508829
+(1 row)
+
+Time: 6.304 ms
+                                            QUERY PLAN                                             
+---------------------------------------------------------------------------------------------------
+ Seq Scan on rating  (cost=0.00..603837.44 rows=4508895 width=21) (actual rows=4596577.00 loops=1)
+   Filter: (stars = 5.0)
+   Rows Removed by Filter: 27403627
+   Buffers: shared hit=3508 read=200321
+ Planning:
+   Buffers: shared hit=9
+(6 rows)
+
+Time: 14385.736 ms (00:14.386)
+ hand_estimate 
+---------------
+       4677897
+(1 row)
+
+Time: 153.496 ms
+                                            QUERY PLAN                                             
+---------------------------------------------------------------------------------------------------
+ Seq Scan on rating  (cost=0.00..603837.44 rows=4677974 width=21) (actual rows=4635230.00 loops=1)
+   Filter: (rated_at >= '2020-01-01 00:00:00+00'::timestamp with time zone)
+   Rows Removed by Filter: 27364974
+   Buffers: shared hit=3602 read=200227
+ Planning:
+   Buffers: shared hit=9
+(6 rows)
+
+Time: 9019.971 ms (00:09.020)
+                                                        QUERY PLAN                                                        
+--------------------------------------------------------------------------------------------------------------------------
+ Gather  (cost=1000.00..820442.01 rows=3322737 width=21) (actual rows=0.00 loops=1)
+   Workers Planned: 2
+   Workers Launched: 2
+   Buffers: shared hit=3696 read=200133
+   ->  Parallel Seq Scan on rating  (cost=0.00..487168.31 rows=1384474 width=21) (actual rows=0.00 loops=3)
+         Filter: ((EXTRACT(year FROM rated_at) < '2003'::numeric) AND (stars = ANY ('{0.5,1.5,2.5,3.5,4.5}'::numeric[])))
+         Rows Removed by Filter: 10666735
+         Buffers: shared hit=3696 read=200133
+(8 rows)
+
+Time: 10240.346 ms (00:10.240)
+CREATE STATISTICS
+Time: 26.006 ms
+ALTER STATISTICS
+Time: 1.307 ms
+ANALYZE
+Time: 11129.086 ms (00:11.129)
+                                                        QUERY PLAN                                                        
+--------------------------------------------------------------------------------------------------------------------------
+ Gather  (cost=1000.00..488174.84 rows=107 width=21) (actual rows=0.00 loops=1)
+   Workers Planned: 2
+   Workers Launched: 2
+   Buffers: shared hit=4234 read=199595
+   ->  Parallel Seq Scan on rating  (cost=0.00..487164.14 rows=45 width=21) (actual rows=0.00 loops=3)
+         Filter: ((EXTRACT(year FROM rated_at) < '2003'::numeric) AND (stars = ANY ('{0.5,1.5,2.5,3.5,4.5}'::numeric[])))
+         Rows Removed by Filter: 10666735
+         Buffers: shared hit=4234 read=199595
+ Planning:
+   Buffers: shared hit=23
+(10 rows)
+
+Time: 15339.420 ms (00:15.339)
+ geqo_threshold 
+----------------
+ 12
+(1 row)
+
+Time: 0.358 ms
+ join_collapse_limit 
+---------------------
+ 8
+(1 row)
+
+Time: 0.219 ms
+ n_rating | n_movie | v_movie_id_rating | hand_estimate 
+----------+---------+-------------------+---------------
+ 32000204 |   87585 |             84432 |      32000202
+(1 row)
+
+Time: 21.570 ms
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ Hash Join  (cost=2746.66..610582.30 rows=32000204 width=55)
+   Hash Cond: (r.movie_id = m.movie_id)
+   ->  Seq Scan on rating r  (cost=0.00..523831.04 rows=32000204 width=21)
+   ->  Hash  (cost=1651.85..1651.85 rows=87585 width=38)
+         ->  Seq Scan on movie m  (cost=0.00..1651.85 rows=87585 width=38)
+(5 rows)
+
+Time: 13.498 ms
+                                                                          QUERY PLAN                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=153326.80..153326.81 rows=1 width=40) (actual rows=1.00 loops=1)
+   Buffers: shared hit=84119 read=220869
+   ->  Gather  (cost=153326.57..153326.78 rows=2 width=40) (actual rows=3.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=84119 read=220869
+         ->  Partial Aggregate  (cost=152326.57..152326.58 rows=1 width=40) (actual rows=1.00 loops=3)
+               Buffers: shared hit=84119 read=220869
+               ->  Nested Loop  (cost=1017.23..151471.93 rows=170929 width=5) (actual rows=11744.00 loops=3)
+                     Join Filter: (r.movie_id = m.movie_id)
+                     Buffers: shared hit=84119 read=220869
+                     ->  Hash Join  (cost=1016.80..2971.78 rows=3226 width=8) (actual rows=117.67 loops=3)
+                           Hash Cond: (m.movie_id = mg.movie_id)
+                           Buffers: shared hit=378 read=403
+                           ->  Parallel Index Only Scan using movie_pkey on movie m  (cost=0.29..1786.16 rows=36494 width=4) (actual rows=29195.00 loops=3)
+                                 Heap Fetches: 0
+                                 Index Searches: 1
+                                 Buffers: shared hit=5 read=239
+                           ->  Hash  (cost=919.73..919.73 rows=7742 width=4) (actual rows=353.00 loops=3)
+                                 Buckets: 8192  Batches: 1  Memory Usage: 77kB
+                                 Buffers: shared hit=373 read=164
+                                 ->  Nested Loop  (cost=88.30..919.73 rows=7742 width=4) (actual rows=353.00 loops=3)
+                                       Buffers: shared hit=373 read=164
+                                       ->  Seq Scan on genre g  (cost=0.00..1.24 rows=1 width=2) (actual rows=1.00 loops=3)
+                                             Filter: ((genre_name)::text = 'Film-Noir'::text)
+                                             Rows Removed by Filter: 18
+                                             Buffers: shared hit=43
+                                       ->  Bitmap Heap Scan on movie_genre mg  (cost=88.30..841.07 rows=7742 width=6) (actual rows=353.00 loops=3)
+                                             Recheck Cond: (genre_id = g.genre_id)
+                                             Heap Blocks: exact=162
+                                             Buffers: shared hit=330 read=164
+                                             ->  Bitmap Index Scan on ix_movie_genre_genre  (cost=0.00..86.36 rows=7742 width=0) (actual rows=353.00 loops=3)
+                                                   Index Cond: (genre_id = g.genre_id)
+                                                   Index Searches: 3
+                                                   Buffers: shared hit=6 read=2
+                     ->  Index Scan using ix_rating_movie on rating r  (cost=0.44..42.77 rows=261 width=9) (actual rows=99.81 loops=353)
+                           Index Cond: (movie_id = mg.movie_id)
+                           Filter: (rated_at >= '2020-01-01 00:00:00+00'::timestamp with time zone)
+                           Rows Removed by Filter: 763
+                           Index Searches: 353
+                           Buffers: shared hit=83741 read=220466
+ Planning:
+   Buffers: shared hit=161 read=15
+ Planning Time: 14.018 ms
+ Execution Time: 17113.208 ms
+(45 rows)
+
+Time: 238590.679 ms (03:58.591)
+SET
+Time: 7.301 ms
+                                                                             QUERY PLAN                                                                             
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=383328.71..383328.72 rows=1 width=40) (actual rows=1.00 loops=1)
+   Buffers: shared hit=15342 read=188894
+   ->  Gather  (cost=383328.48..383328.69 rows=2 width=40) (actual rows=3.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=15342 read=188894
+         ->  Partial Aggregate  (cost=382328.48..382328.49 rows=1 width=40) (actual rows=1.00 loops=3)
+               Buffers: shared hit=15342 read=188894
+               ->  Parallel Hash Join  (cost=3012.99..381473.83 rows=170929 width=5) (actual rows=11744.00 loops=3)
+                     Hash Cond: (r.movie_id = m.movie_id)
+                     Buffers: shared hit=15342 read=188894
+                     ->  Parallel Seq Scan on rating r  (cost=0.00..370496.73 rows=1933821 width=9) (actual rows=1545076.67 loops=3)
+                           Filter: (rated_at >= '2020-01-01 00:00:00+00'::timestamp with time zone)
+                           Rows Removed by Filter: 9121658
+                           Buffers: shared hit=15335 read=188494
+                     ->  Parallel Hash  (cost=2972.67..2972.67 rows=3226 width=8) (actual rows=117.67 loops=3)
+                           Buckets: 8192  Batches: 1  Memory Usage: 96kB
+                           Buffers: shared hit=7 read=400
+                           ->  Hash Join  (cost=1016.80..2972.67 rows=3226 width=8) (actual rows=353.00 loops=1)
+                                 Hash Cond: (m.movie_id = mg.movie_id)
+                                 Buffers: shared hit=7 read=400
+                                 ->  Parallel Index Only Scan using movie_pkey on movie m  (cost=0.29..1787.05 rows=36494 width=4) (actual rows=87585.00 loops=1)
+                                       Heap Fetches: 0
+                                       Index Searches: 1
+                                       Buffers: shared hit=6 read=236
+                                 ->  Hash  (cost=919.73..919.73 rows=7742 width=4) (actual rows=353.00 loops=1)
+                                       Buckets: 8192  Batches: 1  Memory Usage: 77kB
+                                       Buffers: shared hit=1 read=164
+                                       ->  Nested Loop  (cost=88.30..919.73 rows=7742 width=4) (actual rows=353.00 loops=1)
+                                             Buffers: shared hit=1 read=164
+                                             ->  Seq Scan on genre g  (cost=0.00..1.24 rows=1 width=2) (actual rows=1.00 loops=1)
+                                                   Filter: ((genre_name)::text = 'Film-Noir'::text)
+                                                   Rows Removed by Filter: 18
+                                                   Buffers: shared hit=1
+                                             ->  Bitmap Heap Scan on movie_genre mg  (cost=88.30..841.07 rows=7742 width=6) (actual rows=353.00 loops=1)
+                                                   Recheck Cond: (genre_id = g.genre_id)
+                                                   Heap Blocks: exact=162
+                                                   Buffers: shared read=164
+                                                   ->  Bitmap Index Scan on ix_movie_genre_genre  (cost=0.00..86.36 rows=7742 width=0) (actual rows=353.00 loops=1)
+                                                         Index Cond: (genre_id = g.genre_id)
+                                                         Index Searches: 1
+                                                         Buffers: shared read=2
+ Planning:
+   Buffers: shared hit=29 read=15
+ Planning Time: 3.703 ms
+ Execution Time: 9846.629 ms
+(46 rows)
+
+Time: 9853.146 ms (00:09.853)
+RESET
+Time: 0.743 ms
+SET
+Time: 0.137 ms
+                                                                                  QUERY PLAN                                                                                   
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=436385.68..436385.69 rows=1 width=40) (actual rows=1.00 loops=1)
+   Buffers: shared hit=15177 read=189306
+   ->  Gather  (cost=436385.45..436385.66 rows=2 width=40) (actual rows=3.00 loops=1)
+         Workers Planned: 2
+         Workers Launched: 2
+         Buffers: shared hit=15177 read=189306
+         ->  Partial Aggregate  (cost=435385.45..435385.46 rows=1 width=40) (actual rows=1.00 loops=3)
+               Buffers: shared hit=15177 read=189306
+               ->  Hash Join  (cost=5991.56..434530.80 rows=170929 width=5) (actual rows=11744.00 loops=3)
+                     Hash Cond: (mg.genre_id = g.genre_id)
+                     Buffers: shared hit=15177 read=189306
+                     ->  Parallel Hash Join  (cost=5990.31..424102.88 rows=3247653 width=7) (actual rows=4276269.33 loops=3)
+                           Hash Cond: (m.movie_id = mg.movie_id)
+                           Buffers: shared hit=15174 read=189306
+                           ->  Parallel Hash Join  (cost=2242.34..377815.59 rows=1933821 width=13) (actual rows=1545076.67 loops=3)
+                                 Hash Cond: (r.movie_id = m.movie_id)
+                                 Buffers: shared hit=15168 read=188905
+                                 ->  Parallel Seq Scan on rating r  (cost=0.00..370496.73 rows=1933821 width=9) (actual rows=1545076.67 loops=3)
+                                       Filter: (rated_at >= '2020-01-01 00:00:00+00'::timestamp with time zone)
+                                       Rows Removed by Filter: 9121658
+                                       Buffers: shared hit=14924 read=188905
+                                 ->  Parallel Hash  (cost=1786.16..1786.16 rows=36494 width=4) (actual rows=29195.00 loops=3)
+                                       Buckets: 131072  Batches: 1  Memory Usage: 4480kB
+                                       Buffers: shared hit=244
+                                       ->  Parallel Index Only Scan using movie_pkey on movie m  (cost=0.29..1786.16 rows=36494 width=4) (actual rows=29195.00 loops=3)
+                                             Heap Fetches: 0
+                                             Index Searches: 1
+                                             Buffers: shared hit=244
+                           ->  Parallel Hash  (cost=2981.87..2981.87 rows=61288 width=6) (actual rows=49030.00 loops=3)
+                                 Buckets: 262144  Batches: 1  Memory Usage: 7872kB
+                                 Buffers: shared hit=6 read=401
+                                 ->  Parallel Index Only Scan using movie_genre_pkey on movie_genre mg  (cost=0.29..2981.87 rows=61288 width=6) (actual rows=49030.00 loops=3)
+                                       Heap Fetches: 0
+                                       Index Searches: 1
+                                       Buffers: shared hit=6 read=401
+                     ->  Hash  (cost=1.24..1.24 rows=1 width=2) (actual rows=1.00 loops=3)
+                           Buckets: 1024  Batches: 1  Memory Usage: 9kB
+                           Buffers: shared hit=3
+                           ->  Seq Scan on genre g  (cost=0.00..1.24 rows=1 width=2) (actual rows=1.00 loops=3)
+                                 Filter: ((genre_name)::text = 'Film-Noir'::text)
+                                 Rows Removed by Filter: 18
+                                 Buffers: shared hit=3
+ Planning:
+   Buffers: shared hit=30
+ Planning Time: 0.502 ms
+ Execution Time: 5743.140 ms
+(46 rows)
+
+Time: 5744.318 ms (00:05.744)
+RESET
+Time: 0.224 ms
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
+ Aggregate  (cost=5707.55..5707.56 rows=1 width=32)
+   ->  Bitmap Heap Scan on rating  (cost=20.21..5703.75 rows=1519 width=5)
+         Recheck Cond: (movie_id = 3000)
+         ->  Bitmap Index Scan on ix_rating_movie  (cost=0.00..19.83 rows=1519 width=0)
+               Index Cond: (movie_id = 3000)
+(5 rows)
+
+Time: 0.577 ms
+                                        QUERY PLAN                                        
+------------------------------------------------------------------------------------------
+ Aggregate  (cost=8886.58..8886.59 rows=1 width=32)
+   InitPlan 1
+     ->  Limit  (cost=2162.48..2162.48 rows=1 width=12)
+           ->  Sort  (cost=2162.48..2373.56 rows=84432 width=12)
+                 Sort Key: mv_movie_stats.n_ratings DESC
+                 ->  Seq Scan on mv_movie_stats  (cost=0.00..1740.32 rows=84432 width=12)
+   ->  Bitmap Heap Scan on rating  (cost=22.40..6719.59 rows=1802 width=5)
+         Recheck Cond: (movie_id = (InitPlan 1).col1)
+         ->  Bitmap Index Scan on ix_rating_movie  (cost=0.00..21.95 rows=1802 width=0)
+               Index Cond: (movie_id = (InitPlan 1).col1)
+(10 rows)
+
+Time: 7.978 ms
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=380164.23..380164.24 rows=1 width=32)
+   ->  Gather  (cost=380164.01..380164.22 rows=2 width=32)
+         Workers Planned: 2
+         ->  Partial Aggregate  (cost=379164.01..379164.02 rows=1 width=32)
+               ->  Parallel Seq Scan on rating  (cost=0.00..370496.73 rows=3466911 width=5)
+                     Filter: (stars = 4.0)
+(6 rows)
+
+Time: 0.495 ms
+                                      QUERY PLAN                                      
+--------------------------------------------------------------------------------------
+ Aggregate  (cost=13.36..13.37 rows=1 width=8)
+   ->  Index Only Scan using pk_rating on rating  (cost=0.56..12.76 rows=240 width=0)
+         Index Cond: (user_id = 1)
+(3 rows)
+
+Time: 0.425 ms
+DROP INDEX
+Time: 16.628 ms
+                                       QUERY PLAN                                       
+----------------------------------------------------------------------------------------
+ Finalize Aggregate  (cost=371498.54..371498.55 rows=1 width=32)
+   ->  Gather  (cost=371498.31..371498.52 rows=2 width=32)
+         Workers Planned: 2
+         ->  Partial Aggregate  (cost=370498.31..370498.32 rows=1 width=32)
+               ->  Parallel Seq Scan on rating  (cost=0.00..370496.73 rows=633 width=5)
+                     Filter: (movie_id = 3000)
+(6 rows)
+
+Time: 2.167 ms
+SELECT 3159674
+Time: 7801.213 ms (00:07.801)
+SELECT 3159674
+Time: 8180.919 ms (00:08.181)
+CREATE INDEX
+Time: 1431.097 ms (00:01.431)
+CREATE INDEX
+Time: 2707.530 ms (00:02.708)
+CREATE INDEX
+Time: 2368.208 ms (00:02.368)
+ANALYZE
+Time: 617.058 ms
+ANALYZE
+Time: 576.313 ms
+        index_name         | size  
+---------------------------+-------
+ r_user_order_rated_at_idx | 24 kB
+ r_time_order_rated_at_idx | 24 kB
+ bt_time                   | 62 MB
+(3 rows)
+
+Time: 74.169 ms
+  tablename   | rated_at_correlation 
+--------------+----------------------
+ r_user_order |               -0.020
+ r_time_order |                1.000
+(2 rows)
+
+Time: 12.398 ms
+DROP INDEX
+Time: 0.674 ms
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1.00 loops=1)
+   Buffers: shared hit=3, local read=19650
+   ->  Bitmap Heap Scan on r_user_order (actual rows=41866.00 loops=1)
+         Recheck Cond: (rated_at >= '2023-06-01 00:00:00+00'::timestamp with time zone)
+         Rows Removed by Index Recheck: 3037424
+         Heap Blocks: lossy=19648
+         Buffers: shared hit=3, local read=19650
+         ->  Bitmap Index Scan on r_user_order_rated_at_idx (actual rows=196480.00 loops=1)
+               Index Cond: (rated_at >= '2023-06-01 00:00:00+00'::timestamp with time zone)
+               Index Searches: 1
+               Buffers: shared hit=3, local read=2
+ Planning:
+   Buffers: shared hit=7, local read=1
+ Planning Time: 1.226 ms
+ Execution Time: 730.412 ms
+(15 rows)
+
+Time: 732.070 ms
+                                         QUERY PLAN                                         
+--------------------------------------------------------------------------------------------
+ Aggregate (actual rows=1.00 loops=1)
+   Buffers: local read=322
+   ->  Bitmap Heap Scan on r_time_order (actual rows=41866.00 loops=1)
+         Recheck Cond: (rated_at >= '2023-06-01 00:00:00+00'::timestamp with time zone)
+         Rows Removed by Index Recheck: 2928
+         Heap Blocks: lossy=320
+         Buffers: local read=322
+         ->  Bitmap Index Scan on r_time_order_rated_at_idx (actual rows=3200.00 loops=1)
+               Index Cond: (rated_at >= '2023-06-01 00:00:00+00'::timestamp with time zone)
+               Index Searches: 1
+               Buffers: local read=2
+ Planning:
+   Buffers: shared hit=6, local read=1
+ Planning Time: 0.462 ms
+ Execution Time: 31.242 ms
+(15 rows)
+
+Time: 32.712 ms
+                                             QUERY PLAN                                             
+----------------------------------------------------------------------------------------------------
+ Limit (actual rows=10.00 loops=1)
+   Buffers: shared hit=15399 read=188446, temp read=4037 written=6241
+   ->  Sort (actual rows=10.00 loops=1)
+         Sort Key: (((177.00 + sum(stars)) / ((50 + count(*)))::numeric)) DESC
+         Sort Method: top-N heapsort  Memory: 26kB
+         Buffers: shared hit=15399 read=188446, temp read=4037 written=6241
+         ->  Finalize GroupAggregate (actual rows=84432.00 loops=1)
+               Group Key: movie_id
+               Buffers: shared hit=15399 read=188446, temp read=4037 written=6241
+               ->  Gather Merge (actual rows=190517.00 loops=1)
+                     Workers Planned: 2
+                     Workers Launched: 2
+                     Buffers: shared hit=15399 read=188446, temp read=4037 written=6241
+                     ->  Sort (actual rows=63505.67 loops=3)
+                           Sort Key: movie_id
+                           Sort Method: external merge  Disk: 5704kB
+                           Buffers: shared hit=15399 read=188446, temp read=4037 written=6241
+                           Worker 0:  Sort Method: external merge  Disk: 5664kB
+                           Worker 1:  Sort Method: external merge  Disk: 5432kB
+                           ->  Partial HashAggregate (actual rows=63505.67 loops=3)
+                                 Group Key: movie_id
+                                 Batches: 5  Memory Usage: 8241kB  Disk Usage: 7056kB
+                                 Buffers: shared hit=15383 read=188446, temp read=1937 written=4138
+                                 Worker 0:  Batches: 5  Memory Usage: 8241kB  Disk Usage: 7296kB
+                                 Worker 1:  Batches: 5  Memory Usage: 8497kB  Disk Usage: 7288kB
+                                 ->  Parallel Seq Scan on rating (actual rows=10666734.67 loops=3)
+                                       Buffers: shared hit=15383 read=188446
+ Planning:
+   Buffers: shared hit=11 read=3
+ Planning Time: 5.012 ms
+ Execution Time: 9860.256 ms
+(31 rows)
+
+Time: 9878.117 ms (00:09.878)
+                                               QUERY PLAN                                                
+---------------------------------------------------------------------------------------------------------
+ Limit (actual rows=10.00 loops=1)
+   Buffers: shared read=896
+   ->  Sort (actual rows=10.00 loops=1)
+         Sort Key: (((177.00 + (mean_stars * (n_ratings)::numeric)) / ((50 + n_ratings))::numeric)) DESC
+         Sort Method: top-N heapsort  Memory: 26kB
+         Buffers: shared read=896
+         ->  Seq Scan on mv_movie_stats (actual rows=84432.00 loops=1)
+               Buffers: shared read=896
+ Planning:
+   Buffers: shared hit=2 read=1
+ Planning Time: 13.241 ms
+ Execution Time: 124.143 ms
+(12 rows)
+
+Time: 138.006 ms
+ROLLBACK
+Time: 52.599 ms

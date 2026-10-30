@@ -1,0 +1,149 @@
+SET
+SET
+
+=== 1. From a CSV line to relations ===
+    movies.csv:  1,Toy Story (1995),Adventure|Animation|Children|Comedy|Fantasy
+    Title and year were one string, genres a list (not 1NF). Now:
+ movie_id |   title   | release_year | year_source |   imdb    |                     genres                      
+----------+-----------+--------------+-------------+-----------+-------------------------------------------------
+        1 | Toy Story |         1995 | TITLE       | tt0114709 | Adventure, Animation, Children, Comedy, Fantasy
+
+    ... and a title with no year, rescued from IMDb (BR-6):
+ movie_id |                                   title                                    | release_year | year_source 
+----------+----------------------------------------------------------------------------+--------------+-------------
+    79607 | Millions Game, The (Das Millionenspiel)                                    |         1970 | IMDB
+    98063 | Mona and the Time of Burning Love (Mona ja palavan rakkauden aika) (1983)) |         1983 | IMDB
+   123619 | Terrible Joe Moran                                                         |         1984 | IMDB
+
+
+=== 2. BR-1: stars are 0.5 to 5 in half steps (CHECK) ===
+BEGIN
+psql:06_demo.sql:31: ERROR:  new row for relation "rating" violates check constraint "ck_rating_stars"
+DETAIL:  Failing row contains (1, 17, 4.3, 1999-12-03 19:24:37+00).
+ROLLBACK
+
+=== 3. BR-3: no half stars before February 2003 (trigger + rating_scale) ===
+ scale_code |       valid_from       |        valid_to        | step | min_stars 
+------------+------------------------+------------------------+------+-----------
+ WHOLE      | 1994-12-31 18:30:00+00 | 2003-02-18 21:34:27+00 |  1.0 |       1.0
+ HALF       | 2003-02-18 21:34:27+00 | 2099-12-31 18:30:00+00 |  0.5 |       0.5
+
+    User 1 rates a film 3.5 stars in 1999:
+BEGIN
+psql:06_demo.sql:41: ERROR:  BR-3: 3.5 stars by user 1 on movie 1 at 1999-12-01 00:00:00+00 is not on the WHOLE scale in force then
+CONTEXT:  PL/pgSQL function trg_rating_scale() line 10 at RAISE
+ROLLBACK
+    The same rating in 2010 is fine (rolled back anyway):
+BEGIN
+INSERT 0 1
+ROLLBACK
+    And the scales themselves cannot overlap (GiST exclusion): stretch WHOLE to 2005
+BEGIN
+psql:06_demo.sql:51: ERROR:  conflicting key value violates exclusion constraint "rating_scale_tstzrange_excl"
+DETAIL:  Key (tstzrange(valid_from, valid_to))=(["1994-12-31 18:30:00+00","2005-01-01 00:00:00+00")) conflicts with existing key (tstzrange(valid_from, valid_to))=(["2003-02-18 21:34:27+00","2099-12-31 18:30:00+00")).
+ROLLBACK
+
+=== 4. BR-4: every user has >= 20 ratings (an ASSERTION, emulated by triggers) ===
+    (a) a new user arrives with a single rating:
+BEGIN
+INSERT 0 1
+psql:06_demo.sql:59: ERROR:  BR-4: user 999999 would have 1 ratings; every user must have at least 20
+CONTEXT:  PL/pgSQL function trg_user_min_ratings() line 11 at RAISE
+ROLLBACK
+    (b) delete one rating of a user who has exactly 20:
+BEGIN
+psql:06_demo.sql:66: ERROR:  BR-4: user 11 would have 19 ratings; every user must have at least 20
+CONTEXT:  PL/pgSQL function trg_user_min_ratings() line 11 at RAISE
+ROLLBACK
+    (c) but 20 ratings inserted in ONE statement pass: the check runs once, at the end
+BEGIN
+INSERT 0 1
+INSERT 0 20
+ new_user_ratings 
+------------------
+               20
+
+ROLLBACK
+
+=== 5. BR-5: a rating cannot move to another film (row trigger) ===
+BEGIN
+psql:06_demo.sql:78: ERROR:  BR-5: a rating cannot be moved to another user or movie (user 1, movie 17)
+CONTEXT:  PL/pgSQL function trg_rating_identity() line 4 at RAISE
+ROLLBACK
+
+=== 6. A materialized view is a cache: stale until refreshed ===
+    (mv_movie_stats covers all 32M ratings; for the demo, the same definition for one film)
+BEGIN
+SELECT 1
+    20 new users rate Toy Story 0.5 stars ...
+INSERT 0 20
+INSERT 0 400
+     state      | movie_id | n_ratings | mean_stars 
+----------------+----------+-----------+------------
+ before REFRESH |        1 |     68997 |      3.897
+
+REFRESH MATERIALIZED VIEW
+     state     | movie_id | n_ratings | mean_stars 
+---------------+----------+-----------+------------
+ after REFRESH |        1 |     69017 |      3.896
+
+ROLLBACK
+    Rolled back: the users, the ratings and the refresh are all undone.
+
+=== 7. Indexing: "all ratings of one film" on 32M rows ===
+    TIMING OFF: per-row timing overhead on Windows would otherwise distort the comparison.
+    The PK (user_id, movie_id) cannot help (movie_id is not its first column); ix_rating_movie can.
+BEGIN
+                                   QUERY PLAN                                    
+---------------------------------------------------------------------------------
+ Aggregate (actual rows=1.00 loops=1)
+   Buffers: shared read=17566
+   ->  Bitmap Heap Scan on rating (actual rows=17730.00 loops=1)
+         Recheck Cond: (movie_id = 3000)
+         Heap Blocks: exact=17548
+         Buffers: shared read=17566
+         ->  Bitmap Index Scan on ix_rating_movie (actual rows=17730.00 loops=1)
+               Index Cond: (movie_id = 3000)
+               Index Searches: 1
+               Buffers: shared read=18
+ Planning Time: 0.168 ms
+ Execution Time: 1311.171 ms
+
+DROP INDEX
+    ix_rating_movie dropped (inside the transaction). Same query:
+                                QUERY PLAN                                 
+---------------------------------------------------------------------------
+ Aggregate (actual rows=1.00 loops=1)
+   Buffers: shared hit=71233 read=96188
+   ->  Index Scan using pk_rating on rating (actual rows=17730.00 loops=1)
+         Index Cond: (movie_id = 3000)
+         Index Searches: 23848
+         Buffers: shared hit=71233 read=96188
+ Planning:
+   Buffers: shared hit=2 read=1
+ Planning Time: 19.235 ms
+ Execution Time: 7931.442 ms
+
+ROLLBACK
+    Rolled back: the index is restored.
+
+=== 8. The data-quality log: real but suspicious rows are kept, with the reason ===
+  issue_code   |                               description                               | cases 
+---------------+-------------------------------------------------------------------------+-------
+ YEAR_MISMATCH | Title year and IMDb start year differ by more than one year             |  1020
+ NO_YEAR       | Title has no "(yyyy)" suffix; year taken from IMDb or left unknown      |   618
+ BULK_RATING   | User entered 100+ ratings within the same second (import or onboarding) |   310
+ IMDB_MISSING  | Linked IMDb id is not in the current IMDb snapshot                      |   228
+ SHARED_TMDB   | Two MovieLens movies point to the same TMDb id                          |    72
+ POWER_USER    | User has more than 5,000 ratings                                        |    36
+ PRE_RELEASE   | Rated more than a year before the release year                          |    21
+
+
+=== 9. Least privilege: the analytics role can read, not write ===
+SET
+ ratings_visible 
+-----------------
+        32000204
+
+psql:06_demo.sql:123: ERROR:  permission denied for table rating
+RESET
