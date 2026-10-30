@@ -9,6 +9,7 @@ FDS (DBMS) course project, PGDBA, IIM Calcutta.
 | File | Contents |
 |---|---|
 | [01_design.md](01_design.md) | Business rules, what the real data taught us, EER model, ER → relational mapping, normalization to BCNF |
+| [SCHEMA.md](SCHEMA.md) | **Schema and data dictionary**: ER diagram, every table with its columns, types, keys, constraints, row counts and example values, and how the source files map to tables |
 | [data/fetch.py](data/fetch.py) | Downloads MovieLens 32M (MD5-verified) and four IMDb files |
 | [02_ddl.sql](02_ddl.sql) | 16 tables: keys, CHECKs, a GiST exclusion constraint on the rating-scale periods, generated columns, reference data |
 | [03_logic.sql](03_logic.sql) | Statement-level triggers with transition tables (BR-3, BR-4 as an emulated ASSERTION), materialized views, `refresh_research()`, read-only role |

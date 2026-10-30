@@ -108,6 +108,8 @@ The project loads both sources into a normalized database whose constraints and 
 6. **Multivalued attribute** genres ("A|B|C" in the CSV) → `movie_genre` rows.
 
 ### Final relational schema (16 base tables)
+Full data dictionary (columns, types, constraints, row counts, examples, ER diagram): [SCHEMA.md](SCHEMA.md).
+
 
 ```
 data_source(source_code, description, url, snapshot_on)

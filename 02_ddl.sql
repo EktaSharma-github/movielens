@@ -6,6 +6,7 @@
 -- =====================================================================
 
 SET client_min_messages = warning;   -- hide the DROP ... CASCADE notices
+SET timezone = 'UTC';                -- date literals below are UTC instants (the dataset's clock)
 DROP SCHEMA IF EXISTS movielens CASCADE;
 CREATE SCHEMA movielens;
 SET search_path = movielens;
