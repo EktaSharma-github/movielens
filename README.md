@@ -10,7 +10,7 @@ FDS (DBMS) course project, PGDBA, IIM Calcutta.
 |---|---|
 | [01_design.md](01_design.md) | Business rules, what the real data taught us, EER model, ER → relational mapping, normalization to BCNF |
 | [data/fetch.py](data/fetch.py) | Downloads MovieLens 32M (MD5-verified) and four IMDb files |
-| [02_ddl.sql](02_ddl.sql) | 14 tables: keys, CHECKs, a GiST exclusion constraint on the rating-scale periods, generated columns, reference data |
+| [02_ddl.sql](02_ddl.sql) | 16 tables: keys, CHECKs, a GiST exclusion constraint on the rating-scale periods, generated columns, reference data |
 | [03_logic.sql](03_logic.sql) | Statement-level triggers with transition tables (BR-3, BR-4 as an emulated ASSERTION), materialized views, `refresh_research()`, read-only role |
 | [04_load.py](04_load.py) | Title/year/genre parsing, IMDb streaming join, 32M ratings streamed by COPY with keys rebuilt afterwards; base data in one transaction, research layer in a second |
 | [05_queries.sql](05_queries.sql) | Five advanced queries: window functions, relational division, recursive CTE (breadth-first search), LATERAL, INTERSECT/EXCEPT |

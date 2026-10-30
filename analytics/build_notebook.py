@@ -236,7 +236,7 @@ ax.plot(a4.film_age_years, a4.mean_stars, color=BLUE, marker="o", lw=2)
 for x_, y_, n_ in zip(a4.film_age_years, a4.mean_stars, a4.ratings):
     ax.annotate(f"{n_ / 1e6:.1f}M", (x_, y_), xytext=(0, 7), textcoords="offset points", ha="center", fontsize=8, color=INK2)
 ax.set_xlabel("Film's age when rated (years)"); ax.set_ylabel("Mean stars")
-ax.set_title(f"Older films score higher, but the same film drifts {a5.within_film_slope_per_year[0]:+.3f} stars a year")
+ax.set_title(f"Older films score higher, but the same film drifts {a5.within_film_slope_per_year[0]:+.4f} stars a year")
 save(fig, "03_film_age"); plt.show()
 ''')
 reading("A4")

@@ -40,7 +40,7 @@ have reported more than twice the true effect.
 make better films?
 
 A5 answers no. Following the *same* film as it ages (2,126 films released 1996–2012, each with
-at least 1,000 ratings, ages 0–10), the rating **falls** by **0.019 stars per year**, about
+at least 1,000 ratings, ages 0–10), the rating **falls** by **0.0185 stars per year**, about
 0.2 stars over a decade. The rising age curve is therefore **survivorship**. Nobody in 2020
 watches the forgotten films of 1950; they watch *Casablanca*. Old films in the data are a
 selected sample of the best. Their early audience is also selected: fans see a film first and

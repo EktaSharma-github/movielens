@@ -107,7 +107,7 @@ The project loads both sources into a normalized database whose constraints and 
 5. **Ternary** TAGS → `tag_application (user_id, movie_id, tag_id)`.
 6. **Multivalued attribute** genres ("A|B|C" in the CSV) → `movie_genre` rows.
 
-### Final relational schema (14 base tables)
+### Final relational schema (16 base tables)
 
 ```
 data_source(source_code, description, url, snapshot_on)
@@ -189,7 +189,7 @@ The catalog statistics, selectivity estimates by hand vs the optimizer vs the tr
 **Research case study (07 + notebook)**
 - **Long tail:** the top 1% of films get **54.8%** of ratings and the top 10% get 95.7%; 62% of films have fewer than 10 ratings. Gini **0.952**.
 - **Half-star switch (natural experiment):** half stars took 40.7% of ratings after 18 Feb 2003. Following the same 2,643 users, their mean rose +0.046 stars against +0.026 at a placebo date: difference-in-differences **+0.020 stars**. The shape changed; the level barely moved.
-- **Old films:** films over 40 years old average 3.80 stars against 3.42 in the release year, but the *same* film falls **−0.019 stars a year** as it ages (2,126 films). The old-film premium is **survivorship**.
+- **Old films:** films over 40 years old average 3.80 stars against 3.42 in the release year, but the *same* film falls **−0.0185 stars a year** as it ages (2,126 films). The old-film premium is **survivorship**.
 - **Popularity:** corr(ln n, mean) = 0.26. MovieLens and IMDb agree: Pearson **0.92** over 11,535 films.
 - **Genres:** Film-Noir best and least divisive (3.92, SD 0.91); Horror worst and most divisive (3.31, SD 1.13).
 - **Experience:** a heavy user's first 20 ratings sit +0.30 above their own mean; ratings after the 500th sit −0.08 below.
